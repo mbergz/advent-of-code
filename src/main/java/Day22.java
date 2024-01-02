@@ -3,13 +3,16 @@ import Common.Range;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Day22 {
 
     public static void main(String[] args) throws Exception {
-        solvePart1();
         SimpleProfiler profiler = new SimpleProfiler().start();
+        solvePart1();
+        profiler.stop();
+        profiler.start();
         solvePart2();
         profiler.stop();
     }
@@ -49,32 +52,47 @@ public class Day22 {
             }
 
             int count = 0;
+            Map<Block, List<Block>> supportingMap = createSupportingMap(result);
             for (Block uniqueSupporter : uniqueSupporters) {
-                count += recursiveFindAllFallen(uniqueSupporter, result, new HashSet<>()).size();
+                count += recursiveCountAllFallen(uniqueSupporter, supportingMap, new HashSet<>());
             }
             System.out.println(count);
         }
     }
 
-    private static Set<Block> recursiveFindAllFallen(Block current, List<Block> blocksLeft, Set<Block> alreadyFallen) {
+    private static Map<Block, List<Block>> createSupportingMap(List<Block> all) {
+        Map<Block, List<Block>> map = new HashMap<>();
+        for (Block block : all) {
+            map.put(block, new ArrayList<>());
+            List<Block> supportingBlocks = block.getSupportingBlocks();
+            for (Block supp : supportingBlocks) {
+                map.compute(supp, (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
+                    }
+                    v.add(block);
+                    return v;
+                });
+            }
+        }
+        return map;
+    }
+
+    private static int recursiveCountAllFallen(Block current, Map<Block, List<Block>> supportingMap, Set<Block> alreadyFallen) {
         alreadyFallen.add(current);
-        List<Block> supportedByThis = blocksLeft.stream()
-                .filter(b -> b.getSupportingBlocks().contains(current) &&
-                        b.getSupportingBlocks().stream().filter(sB -> !alreadyFallen.contains(sB)).toList().isEmpty())
-                .toList();
-
-        if (supportedByThis.isEmpty()) {
-            return Collections.emptySet();
+        Set<Block> supportedByThis = Optional.ofNullable(supportingMap.get(current))
+                .map(blocksAbove -> blocksAbove.stream().filter(b -> allSupportingBlocksGone(alreadyFallen, b)).collect(Collectors.toSet()))
+                .orElseGet(Collections::emptySet);
+        int count = supportedByThis.size();
+        if (count != 0) {
+            for (Block supported : supportedByThis)
+                count += recursiveCountAllFallen(supported, supportingMap, alreadyFallen);
         }
+        return count;
+    }
 
-        Set<Block> fallen = new HashSet<>(supportedByThis);
-        alreadyFallen.addAll(supportedByThis);
-
-        for (Block supported : supportedByThis) {
-            blocksLeft = blocksLeft.stream().filter(aB -> !alreadyFallen.contains(aB)).toList();
-            fallen.addAll(recursiveFindAllFallen(supported, blocksLeft, alreadyFallen));
-        }
-        return fallen;
+    private static boolean allSupportingBlocksGone(Set<Block> alreadyFallen, Block b) {
+        return alreadyFallen.containsAll(b.getSupportingBlocks());
     }
 
     private static void addSupportingForAlLBlocks(List<Block> allBlocks) {
@@ -93,7 +111,6 @@ public class Day22 {
     private static boolean matchesXandY(Block b1, Block b2) {
         return b1.x().isInRange(b2.x()) && b1.y().isInRange(b2.y());
     }
-
 
     private static List<Block> runFallingDownAlgorithm(List<Block> allBlocks) {
         PriorityQueue<Block> queue = new PriorityQueue<>();
