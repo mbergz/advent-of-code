@@ -8,8 +8,9 @@ import java.util.stream.Stream;
 public class Day22 {
 
     public static void main(String[] args) throws Exception {
-        SimpleProfiler profiler = new SimpleProfiler().start();
         solvePart1();
+        SimpleProfiler profiler = new SimpleProfiler().start();
+        solvePart2();
         profiler.stop();
     }
 
@@ -30,6 +31,50 @@ public class Day22 {
             }
             System.out.println(allBlocks.size() - uniqueSupporters.size());
         }
+    }
+
+    private static void solvePart2() throws Exception {
+        try (Stream<String> stream = Files.lines(Paths.get(Day22.class.getResource("day22.txt").toURI()))) {
+            List<String> lines = stream.toList();
+            List<Block> allBlocks = lines.stream().map(Block::new).toList();
+
+            List<Block> result = runFallingDownAlgorithm(allBlocks);
+            addSupportingForAlLBlocks(result);
+
+            Set<Block> uniqueSupporters = new HashSet<>();
+            for (Block block : result) {
+                if (block.getSupportingBlocks().size() == 1) {
+                    uniqueSupporters.add(block.getSupportingBlocks().get(0));
+                }
+            }
+
+            int count = 0;
+            for (Block uniqueSupporter : uniqueSupporters) {
+                count += recursiveFindAllFallen(uniqueSupporter, result, new HashSet<>()).size();
+            }
+            System.out.println(count);
+        }
+    }
+
+    private static Set<Block> recursiveFindAllFallen(Block current, List<Block> blocksLeft, Set<Block> alreadyFallen) {
+        alreadyFallen.add(current);
+        List<Block> supportedByThis = blocksLeft.stream()
+                .filter(b -> b.getSupportingBlocks().contains(current) &&
+                        b.getSupportingBlocks().stream().filter(sB -> !alreadyFallen.contains(sB)).toList().isEmpty())
+                .toList();
+
+        if (supportedByThis.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<Block> fallen = new HashSet<>(supportedByThis);
+        alreadyFallen.addAll(supportedByThis);
+
+        for (Block supported : supportedByThis) {
+            blocksLeft = blocksLeft.stream().filter(aB -> !alreadyFallen.contains(aB)).toList();
+            fallen.addAll(recursiveFindAllFallen(supported, blocksLeft, alreadyFallen));
+        }
+        return fallen;
     }
 
     private static void addSupportingForAlLBlocks(List<Block> allBlocks) {
@@ -123,6 +168,14 @@ public class Day22 {
             this.z = z;
         }
 
+        public Block(String line) {
+            this(UUID.randomUUID().toString(),
+                    new Range(getFirstPartAtIndex(line, 0), getSecondPartAtIndex(line, 0)),
+                    new Range(getFirstPartAtIndex(line, 1), getSecondPartAtIndex(line, 1)),
+                    new Range(getFirstPartAtIndex(line, 2), getSecondPartAtIndex(line, 2)));
+        }
+
+
         public void addSupportingBlock(Block supporting) {
             this.supportingBlocks.add(supporting);
         }
@@ -145,14 +198,6 @@ public class Day22 {
 
         public Range z() {
             return z;
-        }
-
-
-        public Block(String line) {
-            this(UUID.randomUUID().toString(),
-                    new Range(getFirstPartAtIndex(line, 0), getSecondPartAtIndex(line, 0)),
-                    new Range(getFirstPartAtIndex(line, 1), getSecondPartAtIndex(line, 1)),
-                    new Range(getFirstPartAtIndex(line, 2), getSecondPartAtIndex(line, 2)));
         }
 
         @Override
