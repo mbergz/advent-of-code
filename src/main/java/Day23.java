@@ -4,6 +4,8 @@ import Common.Direction;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Day23 {
@@ -22,11 +24,51 @@ public class Day23 {
             Map<TilePair, Integer> split = new HashMap<>();
             int res = search(startingCoord, 0, map, split);
 
-            for (Map.Entry<TilePair, Integer> entry : new HashSet<>(split.entrySet())) {
-                res = Math.max(res, search(entry.getKey(), entry.getValue(), map, split));
+            int sMax = 0;
+            for (int i = 0; i < 1000; i++) {
+                int s1 = searchSinglePath(startingCoord, 0, map);
+                sMax = Math.max(sMax, s1);
             }
             int t = 2;
             // Now look at map
+        }
+    }
+
+    private static int searchSinglePath(TilePair currentTile, int currLength, Tile[][] map) {
+        Set<TilePair> visited = new HashSet<>();
+        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
+        while (!possiblePaths.isEmpty()) {
+            int randomNum = ThreadLocalRandom.current().nextInt(0, possiblePaths.size());
+            currentTile = possiblePaths.get(randomNum);
+            if (visited.contains(currentTile)) {
+                possiblePaths = getPossiblePaths(currentTile, map);
+                continue;
+            }
+            visited.add(currentTile);
+            currLength++;
+            possiblePaths = getPossiblePaths(currentTile, map);
+        }
+
+        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
+            printPathTaken(map, visited);
+            return currLength;
+        }
+
+        return -1;
+    }
+
+    private static void printPathTaken(Tile[][] map, Set<TilePair> visited) {
+        Set<Tile> visitedTile = visited.stream().map(TilePair::tile).collect(Collectors.toSet());
+        for (int y = 0; y<map.length; y++) {
+            for (int x = 0; x<map[0].length; x++) {
+                Tile t = map[y][x];
+                if (visitedTile.contains(t)) {
+                    System.out.print("0");
+                } else {
+                    System.out.print(t.type);
+                }
+            }
+            System.out.println();
         }
     }
 
