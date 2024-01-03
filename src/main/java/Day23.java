@@ -18,10 +18,35 @@ public class Day23 {
             Tile[][] map = createMap(lines);
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
-            iterativeSearchForPath(startingCoord, map);
+            //iterativeSearchForPath(startingCoord, map);
+            Map<TilePair, Integer> split = new HashMap<>();
+            int res = search(startingCoord, 0, map, split);
+
+            for (Map.Entry<TilePair, Integer> entry : new HashSet<>(split.entrySet())) {
+                res = Math.max(res, search(entry.getKey(), entry.getValue(), map, split));
+            }
             int t = 2;
             // Now look at map
         }
+    }
+
+    private static int search(TilePair currentTile, int currLength, Tile[][] map, Map<TilePair, Integer> split) {
+
+        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
+        while (!possiblePaths.isEmpty()) {
+            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
+                split.put(tilePair, currLength + 1);
+            }
+            currentTile = possiblePaths.get(0);
+            currLength++;
+            possiblePaths = getPossiblePaths(currentTile, map);
+        }
+
+        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
+            return currLength;
+        }
+
+        return -1;
     }
 
     private static int iterativeSearchForPath(TilePair startTile, Tile[][] map) {
