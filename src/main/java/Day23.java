@@ -11,16 +11,9 @@ public class Day23 {
 
     public static void main(String[] args) throws Exception {
         solvePart1();
-    }
-
-    private static int getMaxFromLists(List<State> stateList) {
-        int max = 0;
-        for (State s : stateList) {
-            if (s.done()) {
-                max = Math.max(max, s.currLength());
-            }
-        }
-        return max;
+        SimpleProfiler profiler = new SimpleProfiler().start();
+        solvePart2();
+        profiler.stop();
     }
 
     private static void solvePart1() throws Exception {
@@ -29,11 +22,11 @@ public class Day23 {
             Tile[][] map = createMap(lines);
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
-
             State startingState = new State(startingCoord, 0, new HashSet<>(), false);
             List<State> res = search(startingState, map);
             int max = getMaxFromLists(res);
 
+            // Brute-force all possible paths
             while (!res.stream().allMatch(State::done)) {
                 List<State> newStates = new ArrayList<>();
                 List<State> notDone = res.stream().filter(state -> !state.done()).toList();
@@ -48,8 +41,30 @@ public class Day23 {
         }
     }
 
-    private record State(TilePair tilePair, int currLength, Set<Coord> visited, boolean done) {
+    private static void solvePart2() throws Exception {
+        try (Stream<String> stream = Files.lines(Paths.get(Day23.class.getResource("day23.txt").toURI()))) {
+            List<String> lines = stream.toList();
+            Tile[][] map = createMapPart2(lines);
 
+            TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
+
+            State startingState = new State(startingCoord, 0, new HashSet<>(), false);
+            List<State> res = searchPart2(startingState, map);
+            int max = getMaxFromLists(res);
+
+            // Need to optimize this
+            while (!res.stream().allMatch(State::done)) {
+                List<State> newStates = new ArrayList<>();
+                List<State> notDone = res.stream().filter(state -> !state.done()).toList();
+                for (State notDoneState : notDone) {
+                    newStates.addAll(searchPart2(notDoneState, map));
+                }
+                max = Math.max(getMaxFromLists(newStates), max);
+                res = newStates;
+            }
+
+            System.out.println(max);
+        }
     }
 
     private static List<State> search(State currentState, Tile[][] map) {
@@ -62,16 +77,45 @@ public class Day23 {
         List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
         while (!possiblePaths.isEmpty()) {
             currentTile = possiblePaths.get(0);
-            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
-                result.add(new State(tilePair, currLength + 1, new HashSet<>(visited), false));
-            }
-
             if (visited.contains(currentTile.tile.coord)) {
-                possiblePaths = getPossiblePaths(currentTile, map);
                 continue;
             }
             visited.add(currentTile.tile.coord);
             currLength++;
+            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
+                result.add(new State(tilePair, currLength, new HashSet<>(visited), false));
+            }
+            possiblePaths = getPossiblePaths(currentTile, map);
+        }
+
+        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
+            result.add(new State(currentTile, currLength, new HashSet<>(visited), true));
+        }
+
+        return result;
+    }
+
+    private static List<State> searchPart2(State currentState, Tile[][] map) {
+        int currLength = currentState.currLength();
+        Set<Coord> visited = currentState.visited();
+        TilePair currentTile = currentState.tilePair();
+
+        List<State> result = new ArrayList<>();
+
+        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
+        while (!possiblePaths.isEmpty()) {
+            currentTile = possiblePaths.get(0);
+            if (visited.contains(currentTile.tile.coord)) {
+                if (possiblePaths.stream().allMatch(pP -> visited.contains(pP.tile.coord))) {
+                    break;
+                }
+                continue;
+            }
+            visited.add(currentTile.tile.coord);
+            currLength++;
+            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
+                result.add(new State(tilePair, currLength, new HashSet<>(visited), false));
+            }
             possiblePaths = getPossiblePaths(currentTile, map);
         }
 
@@ -180,11 +224,35 @@ public class Day23 {
         return res;
     }
 
+    private static Tile[][] createMapPart2(List<String> lines) {
+        Tile[][] res = new Tile[lines.size()][lines.get(0).length()];
+        for (int y = 0; y < lines.size(); y++) {
+            for (int x = 0; x < lines.get(y).length(); x++) {
+                char cChar = lines.get(y).charAt(x);
+                if (cChar != '.' && cChar != '#') {
+                    cChar = '.';
+                }
+                res[y][x] = new Tile(new Coord(x, y), cChar);
+            }
+        }
+        return res;
+    }
+
+    private static int getMaxFromLists(List<State> stateList) {
+        return stateList.stream()
+                .filter(State::done)
+                .map(State::currLength)
+                .reduce(Integer::max)
+                .orElse(0);
+    }
+
+    private record State(TilePair tilePair, int currLength, Set<Coord> visited, boolean done) {
+    }
+
     private record TilePair(Tile tile, Direction from) {
     }
 
     private record Tile(Coord coord, char type) {
     }
-
 
 }
