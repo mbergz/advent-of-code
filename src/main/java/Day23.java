@@ -4,7 +4,6 @@ import Common.Direction;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,54 +13,80 @@ public class Day23 {
         solvePart1();
     }
 
+    private static int getMaxFromLists(List<State> stateList) {
+        int max = 0;
+        for (State s : stateList) {
+            if (s.done()) {
+                max = Math.max(max, s.currLength());
+            }
+        }
+        return max;
+    }
+
     private static void solvePart1() throws Exception {
         try (Stream<String> stream = Files.lines(Paths.get(Day23.class.getResource("day23.txt").toURI()))) {
             List<String> lines = stream.toList();
             Tile[][] map = createMap(lines);
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
-            //iterativeSearchForPath(startingCoord, map);
-            Map<TilePair, Integer> split = new HashMap<>();
-            int res = search(startingCoord, 0, map, split);
 
-            int sMax = 0;
-            for (int i = 0; i < 1000; i++) {
-                int s1 = searchSinglePath(startingCoord, 0, map);
-                sMax = Math.max(sMax, s1);
+            State startingState = new State(startingCoord, 0, new HashSet<>(), false);
+            List<State> res = search(startingState, map);
+            int max = getMaxFromLists(res);
+
+            while (!res.stream().allMatch(State::done)) {
+                List<State> newStates = new ArrayList<>();
+                List<State> notDone = res.stream().filter(state -> !state.done()).toList();
+                for (State notDoneState : notDone) {
+                    newStates.addAll(search(notDoneState, map));
+                }
+                max = Math.max(getMaxFromLists(newStates), max);
+                res = newStates;
             }
-            int t = 2;
-            // Now look at map
+
+            System.out.println(max);
         }
     }
 
-    private static int searchSinglePath(TilePair currentTile, int currLength, Tile[][] map) {
-        Set<TilePair> visited = new HashSet<>();
+    private record State(TilePair tilePair, int currLength, Set<Coord> visited, boolean done) {
+
+    }
+
+    private static List<State> search(State currentState, Tile[][] map) {
+        int currLength = currentState.currLength();
+        Set<Coord> visited = currentState.visited();
+        TilePair currentTile = currentState.tilePair();
+
+        List<State> result = new ArrayList<>();
+
         List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
         while (!possiblePaths.isEmpty()) {
-            int randomNum = ThreadLocalRandom.current().nextInt(0, possiblePaths.size());
-            currentTile = possiblePaths.get(randomNum);
-            if (visited.contains(currentTile)) {
+            currentTile = possiblePaths.get(0);
+            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
+                result.add(new State(tilePair, currLength + 1, new HashSet<>(visited), false));
+            }
+
+            if (visited.contains(currentTile.tile.coord)) {
                 possiblePaths = getPossiblePaths(currentTile, map);
                 continue;
             }
-            visited.add(currentTile);
+            visited.add(currentTile.tile.coord);
             currLength++;
             possiblePaths = getPossiblePaths(currentTile, map);
         }
 
         if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
-            printPathTaken(map, visited);
-            return currLength;
+            result.add(new State(currentTile, currLength, new HashSet<>(visited), true));
         }
 
-        return -1;
+        return result;
     }
 
     private static void printPathTaken(Tile[][] map, Set<TilePair> visited) {
         Set<Tile> visitedTile = visited.stream().map(TilePair::tile).collect(Collectors.toSet());
-        for (int y = 0; y<map.length; y++) {
-            for (int x = 0; x<map[0].length; x++) {
-                Tile t = map[y][x];
+        for (Tile[] tiles : map) {
+            for (int x = 0; x < map[0].length; x++) {
+                Tile t = tiles[x];
                 if (visitedTile.contains(t)) {
                     System.out.print("0");
                 } else {
@@ -71,52 +96,6 @@ public class Day23 {
             System.out.println();
         }
     }
-
-    private static int search(TilePair currentTile, int currLength, Tile[][] map, Map<TilePair, Integer> split) {
-
-        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
-        while (!possiblePaths.isEmpty()) {
-            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
-                split.put(tilePair, currLength + 1);
-            }
-            currentTile = possiblePaths.get(0);
-            currLength++;
-            possiblePaths = getPossiblePaths(currentTile, map);
-        }
-
-        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
-            return currLength;
-        }
-
-        return -1;
-    }
-
-    private static int iterativeSearchForPath(TilePair startTile, Tile[][] map) {
-        int count = 0;
-
-        Map<Coord, Integer> distanceMap = new HashMap<>();
-        Stack<TilePair> stack = new Stack<>();
-        stack.push(startTile);
-
-        while (!stack.isEmpty()) {
-            TilePair currentTile = stack.pop();
-
-            if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
-                count++;
-                continue;
-            }
-
-            count++;
-            List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
-
-            for (TilePair next : possiblePaths) {
-                stack.push(next);
-            }
-        }
-
-        return count;
-    }
-
 
     private static List<TilePair> getPossiblePaths(TilePair tile, Tile[][] map) {
         if (tile.tile.type == '^') {
@@ -152,7 +131,7 @@ public class Day23 {
 
     private static Optional<TilePair> getNextLeft(TilePair fromTile, Tile[][] map) {
         Coord newCoord = new Coord(fromTile.tile.coord.x() - 1, fromTile.tile.coord.y());
-        if (isValid(newCoord, map)) {
+        if (isValid(newCoord, map) && map[newCoord.y()][newCoord.x()].type != '>') {
             return Optional.of(new TilePair(map[newCoord.y()][newCoord.x()], Direction.RIGHT));
         }
         return Optional.empty();
@@ -160,7 +139,7 @@ public class Day23 {
 
     private static Optional<TilePair> getNextUp(TilePair fromTile, Tile[][] map) {
         Coord newCoord = new Coord(fromTile.tile.coord.x(), fromTile.tile.coord.y() - 1);
-        if (isValid(newCoord, map)) {
+        if (isValid(newCoord, map) && map[newCoord.y()][newCoord.x()].type != 'v') {
             return Optional.of(new TilePair(map[newCoord.y()][newCoord.x()], Direction.DOWN));
         }
         return Optional.empty();
@@ -168,7 +147,7 @@ public class Day23 {
 
     private static Optional<TilePair> getNextRight(TilePair fromTile, Tile[][] map) {
         Coord newCoord = new Coord(fromTile.tile.coord.x() + 1, fromTile.tile.coord.y());
-        if (isValid(newCoord, map)) {
+        if (isValid(newCoord, map) && map[newCoord.y()][newCoord.x()].type != '<') {
             return Optional.of(new TilePair(map[newCoord.y()][newCoord.x()], Direction.LEFT));
         }
         return Optional.empty();
@@ -176,7 +155,7 @@ public class Day23 {
 
     private static Optional<TilePair> getNextDown(TilePair fromTile, Tile[][] map) {
         Coord newCoord = new Coord(fromTile.tile.coord.x(), fromTile.tile.coord.y() + 1);
-        if (isValid(newCoord, map)) {
+        if (isValid(newCoord, map) && map[newCoord.y()][newCoord.x()].type != '^') {
             return Optional.of(new TilePair(map[newCoord.y()][newCoord.x()], Direction.UP));
         }
         return Optional.empty();
