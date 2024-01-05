@@ -4,16 +4,15 @@ import Common.Direction;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Day23 {
 
     public static void main(String[] args) throws Exception {
-        solvePart1();
         SimpleProfiler profiler = new SimpleProfiler().start();
-        solvePart2();
+        solvePart1();
         profiler.stop();
+        solvePart2();
     }
 
     private static void solvePart1() throws Exception {
@@ -22,21 +21,7 @@ public class Day23 {
             Tile[][] map = createMap(lines);
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
-            State startingState = new State(startingCoord, 0, new HashSet<>(), false);
-            List<State> res = search(startingState, map);
-            int max = getMaxFromLists(res);
-
-            // Brute-force all possible paths
-            while (!res.stream().allMatch(State::done)) {
-                List<State> newStates = new ArrayList<>();
-                List<State> notDone = res.stream().filter(state -> !state.done()).toList();
-                for (State notDoneState : notDone) {
-                    newStates.addAll(search(notDoneState, map));
-                }
-                max = Math.max(getMaxFromLists(newStates), max);
-                res = newStates;
-            }
-
+            int max = dfs(startingCoord, new HashSet<>(), map);
             System.out.println(max);
         }
     }
@@ -48,97 +33,54 @@ public class Day23 {
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
 
-            State startingState = new State(startingCoord, 0, new HashSet<>(), false);
-            List<State> res = searchPart2(startingState, map);
-            int max = getMaxFromLists(res);
-
-            // Need to optimize this
-            while (!res.stream().allMatch(State::done)) {
-                List<State> newStates = new ArrayList<>();
-                List<State> notDone = res.stream().filter(state -> !state.done()).toList();
-                for (State notDoneState : notDone) {
-                    newStates.addAll(searchPart2(notDoneState, map));
-                }
-                max = Math.max(getMaxFromLists(newStates), max);
-                res = newStates;
-            }
-
-            System.out.println(max);
+            // Brute forcing this with -Xss20m for a couple of min and
+            // inspecting current max gave me right answer :D , TODO - optimize
+            dfsBruteForcePart2(startingCoord, new HashSet<>(), map);
         }
     }
 
-    private static List<State> search(State currentState, Tile[][] map) {
-        int currLength = currentState.currLength();
-        Set<Coord> visited = currentState.visited();
-        TilePair currentTile = currentState.tilePair();
+    private static int dfs(TilePair tilePair, Set<Coord> visitedSoFar, Tile[][] map) {
+        if (tilePair.tile.coord.y() == map.length - 1 && tilePair.tile.coord.x() == map[0].length - 2) {
+            return visitedSoFar.size();
+        }
 
-        List<State> result = new ArrayList<>();
-
-        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
-        while (!possiblePaths.isEmpty()) {
-            currentTile = possiblePaths.get(0);
-            if (visited.contains(currentTile.tile.coord)) {
+        int maxLength = 0;
+        List<TilePair> possiblePaths = getPossiblePaths(tilePair, map);
+        for (TilePair next : possiblePaths) {
+            if (visitedSoFar.contains(next.tile.coord)) {
                 continue;
             }
-            visited.add(currentTile.tile.coord);
-            currLength++;
-            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
-                result.add(new State(tilePair, currLength, new HashSet<>(visited), false));
-            }
-            possiblePaths = getPossiblePaths(currentTile, map);
+            visitedSoFar.add(next.tile.coord);
+            int maxNext = dfs(next, visitedSoFar, map);
+            maxLength = Math.max(maxNext, maxLength);
+            visitedSoFar.remove(next.tile.coord);
         }
-
-        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
-            result.add(new State(currentTile, currLength, new HashSet<>(visited), true));
-        }
-
-        return result;
+        return maxLength;
     }
 
-    private static List<State> searchPart2(State currentState, Tile[][] map) {
-        int currLength = currentState.currLength();
-        Set<Coord> visited = currentState.visited();
-        TilePair currentTile = currentState.tilePair();
+    private static int max = 0;
 
-        List<State> result = new ArrayList<>();
+    private static int dfsBruteForcePart2(TilePair tilePair, Set<Coord> visitedSoFar, Tile[][] map) {
+        if (tilePair.tile.coord.y() == map.length - 1 && tilePair.tile.coord.x() == map[0].length - 2) {
+            max = Math.max(visitedSoFar.size(), max);
+            return visitedSoFar.size();
+        }
 
-        List<TilePair> possiblePaths = getPossiblePaths(currentTile, map);
-        while (!possiblePaths.isEmpty()) {
-            currentTile = possiblePaths.get(0);
-            if (visited.contains(currentTile.tile.coord)) {
-                if (possiblePaths.stream().allMatch(pP -> visited.contains(pP.tile.coord))) {
-                    break;
-                }
+        int maxLength = 0;
+        List<TilePair> possiblePaths = getPossiblePaths(tilePair, map);
+        if (possiblePaths.stream().allMatch(pP -> visitedSoFar.contains(pP.tile.coord))) {
+            return 0;
+        }
+        for (TilePair next : possiblePaths) {
+            if (visitedSoFar.contains(next.tile.coord)) {
                 continue;
             }
-            visited.add(currentTile.tile.coord);
-            currLength++;
-            for (TilePair tilePair : possiblePaths.subList(1, possiblePaths.size())) {
-                result.add(new State(tilePair, currLength, new HashSet<>(visited), false));
-            }
-            possiblePaths = getPossiblePaths(currentTile, map);
+            visitedSoFar.add(next.tile.coord);
+            int maxNext = dfsBruteForcePart2(next, visitedSoFar, map);
+            maxLength = Math.max(maxNext, maxLength);
+            visitedSoFar.remove(next.tile.coord);
         }
-
-        if (currentTile.tile.coord.y() == map.length - 1 && currentTile.tile.coord.x() == map[0].length - 2) {
-            result.add(new State(currentTile, currLength, new HashSet<>(visited), true));
-        }
-
-        return result;
-    }
-
-    private static void printPathTaken(Tile[][] map, Set<TilePair> visited) {
-        Set<Tile> visitedTile = visited.stream().map(TilePair::tile).collect(Collectors.toSet());
-        for (Tile[] tiles : map) {
-            for (int x = 0; x < map[0].length; x++) {
-                Tile t = tiles[x];
-                if (visitedTile.contains(t)) {
-                    System.out.print("0");
-                } else {
-                    System.out.print(t.type);
-                }
-            }
-            System.out.println();
-        }
+        return maxLength;
     }
 
     private static List<TilePair> getPossiblePaths(TilePair tile, Tile[][] map) {
@@ -236,17 +178,6 @@ public class Day23 {
             }
         }
         return res;
-    }
-
-    private static int getMaxFromLists(List<State> stateList) {
-        return stateList.stream()
-                .filter(State::done)
-                .map(State::currLength)
-                .reduce(Integer::max)
-                .orElse(0);
-    }
-
-    private record State(TilePair tilePair, int currLength, Set<Coord> visited, boolean done) {
     }
 
     private record TilePair(Tile tile, Direction from) {
