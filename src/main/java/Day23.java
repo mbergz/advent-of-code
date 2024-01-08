@@ -9,10 +9,10 @@ import java.util.stream.Stream;
 public class Day23 {
 
     public static void main(String[] args) throws Exception {
-        SimpleProfiler profiler = new SimpleProfiler().start();
         solvePart1();
-        profiler.stop();
+        SimpleProfiler profiler = new SimpleProfiler().start();
         solvePart2();
+        profiler.stop();
     }
 
     private static void solvePart1() throws Exception {
@@ -33,9 +33,15 @@ public class Day23 {
 
             TilePair startingCoord = new TilePair(map[0][1], Direction.UP);
 
-            // Brute forcing this with -Xss20m for a couple of min and
-            // inspecting current max gave me right answer :D , TODO - optimize
-            dfsBruteForcePart2(startingCoord, new HashSet<>(), map);
+            // Before this I did brute forcing this with -Xss20m for a couple of min,
+            // inspected max and got the right answer :D
+            // Here is a better approach but still room for improv as pretty slow ~35sec
+            buildGraph(startingCoord, map);
+
+            Path startingPath = MEMO.get(new Coord(1, 0)).get(0);
+            Set<Path> seen = new HashSet<>();
+            seen.add(startingPath);
+            System.out.println(dfsIntersectedMap(startingPath, seen));
         }
     }
 
@@ -58,29 +64,153 @@ public class Day23 {
         return maxLength;
     }
 
-    private static int max = 0;
 
-    private static int dfsBruteForcePart2(TilePair tilePair, Set<Coord> visitedSoFar, Tile[][] map) {
-        if (tilePair.tile.coord.y() == map.length - 1 && tilePair.tile.coord.x() == map[0].length - 2) {
-            max = Math.max(visitedSoFar.size(), max);
-            return visitedSoFar.size();
+    private static int dfsIntersectedMap(Path current, Set<Path> visitedPaths) {
+        if (current.toIntersection.tile.coord.y() == 140 && current.toIntersection.tile.coord.x() == 139) {
+            return visitedPaths.stream().map(p -> p.path.size() + 1).reduce(Integer::sum).orElse(0);
         }
-
         int maxLength = 0;
-        List<TilePair> possiblePaths = getPossiblePaths(tilePair, map);
-        if (possiblePaths.stream().allMatch(pP -> visitedSoFar.contains(pP.tile.coord))) {
+        List<Path> possiblePaths = Optional.ofNullable(MEMO.get(current.toIntersection.tile.coord))
+                .orElse(Collections.emptyList());
+        if (possiblePaths.isEmpty()) {
             return 0;
         }
-        for (TilePair next : possiblePaths) {
-            if (visitedSoFar.contains(next.tile.coord)) {
+        for (Path next : possiblePaths) {
+            if (visitedPaths.stream().anyMatch(visited -> visited.fromIntersection.tile.coord.equals(next.toIntersection.tile.coord))) {
                 continue;
             }
-            visitedSoFar.add(next.tile.coord);
-            int maxNext = dfsBruteForcePart2(next, visitedSoFar, map);
+            visitedPaths.add(next);
+            int maxNext = dfsIntersectedMap(next, visitedPaths);
             maxLength = Math.max(maxNext, maxLength);
-            visitedSoFar.remove(next.tile.coord);
+            visitedPaths.remove(next);
         }
+
         return maxLength;
+    }
+
+    private static void print(Set<Path> paths, Tile[][] map) {
+        for (Tile[] row : map) {
+            for (Tile t : row) {
+                if (paths.stream().anyMatch(p -> p.toIntersection.tile.equals(t) ||
+                        p.fromIntersection.tile.equals(t) ||
+                        p.path.stream().anyMatch(tP -> tP.tile.equals(t)))) {
+                    System.out.print("0");
+                } else {
+                    System.out.print(t.type);
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private static final Map<Coord, List<Path>> MEMO = new HashMap<>();
+
+    private static class Path {
+        private final TilePair fromIntersection;
+        private TilePair toIntersection;
+
+        public Path(TilePair fromIntersection) {
+            this.fromIntersection = fromIntersection;
+        }
+
+        TilePair getLast() {
+            if (!path.isEmpty()) {
+                return path.get(path.size() - 1);
+            }
+            return null;
+        }
+
+        void removeLast() {
+            path.remove(path.size() - 1);
+        }
+
+        private List<TilePair> path = new ArrayList<>();
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Path path1 = (Path) o;
+            return Objects.equals(fromIntersection, path1.fromIntersection) && Objects.equals(toIntersection, path1.toIntersection) && Objects.equals(path, path1.path);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(fromIntersection, toIntersection, path);
+        }
+    }
+
+
+    private static void buildGraph(TilePair start, Tile[][] map) {
+        Stack<Path> queue = new Stack<>();
+        Set<Coord> visited = new HashSet<>();
+
+        Path startBuilder = new Path(start);
+        startBuilder.path.add(getPossiblePaths(start, map).get(0));
+
+        queue.add(startBuilder);
+
+        while (!queue.isEmpty()) {
+            Path current = queue.pop();
+
+            List<TilePair> path = current.path;
+            List<TilePair> possiblePaths = getPossiblePaths(current.getLast(), map);
+            while (possiblePaths.size() == 1) {
+                TilePair next = possiblePaths.get(0);
+                path.add(next);
+                possiblePaths = getPossiblePaths(next, map);
+            }
+            if (possiblePaths.size() > 1) {
+                current.path = new ArrayList<>(path);
+                current.toIntersection = path.get(path.size() - 1);
+                current.removeLast();
+                for (TilePair pathItem : current.path) {
+                    visited.add(pathItem.tile.coord);
+                }
+
+                addToIntersectionMap(current);
+
+                Path reversedCurrent = new Path(current.toIntersection);
+                reversedCurrent.toIntersection = current.fromIntersection;
+                reversedCurrent.path = new ArrayList<>(current.path);
+                Collections.reverse(reversedCurrent.path);
+                addToIntersectionMap(reversedCurrent);
+
+                for (TilePair next : possiblePaths) {
+                    if (!visited.contains(next.tile.coord)) {
+                        Path newPathForNext = new Path(current.toIntersection);
+                        newPathForNext.path.add(next);
+                        queue.add(newPathForNext);
+                    }
+                }
+            }
+            if (possiblePaths.isEmpty()) {
+                TilePair last = path.get(path.size() - 1);
+                if (last.tile.coord.y() == map.length - 1 && last.tile.coord.x() == map[0].length - 2) {
+                    current.path = new ArrayList<>(path);
+                    current.toIntersection = path.get(path.size() - 1);
+                    current.removeLast();
+                    MEMO.putIfAbsent(current.fromIntersection.tile.coord, new ArrayList<>());
+                    MEMO.get(current.fromIntersection.tile.coord).add(current);
+                }
+            }
+        }
+    }
+
+    private static void addToIntersectionMap(Path current) {
+        if (MEMO.get(current.fromIntersection.tile.coord) != null) {
+            if (MEMO.get(current.fromIntersection.tile.coord).stream()
+                    .noneMatch(p -> p.toIntersection.tile.coord.equals(current.toIntersection.tile.coord))) {
+                MEMO.get(current.fromIntersection.tile.coord).add(current);
+            }
+        } else {
+            MEMO.putIfAbsent(current.fromIntersection.tile.coord, new ArrayList<>());
+            MEMO.get(current.fromIntersection.tile.coord).add(current);
+        }
+    }
+
+    private static List<TilePair> getAllPossiblePaths(TilePair tile, Tile[][] map) {
+        return getInDirections(List.of(Direction.DOWN, Direction.LEFT, Direction.UP, Direction.RIGHT), tile, map);
     }
 
     private static List<TilePair> getPossiblePaths(TilePair tile, Tile[][] map) {
