@@ -19,18 +19,23 @@ def build_rows(nbr_line):
     return result
 
 
-def part1():
-    result = 0
+def solve():
+    result_part1 = 0
+    result_part2 = 0
     for line in lines:
         rows = build_rows([int(num) for num in line.split()])
         rows.reverse()
         for index, row in enumerate(rows):
+            # Fill forward
             last_elem_prev_row = rows[index - 1][-1] if index != 0 else 0
-            last_elem_curr_row = row[-1]
-            row.append(last_elem_curr_row + last_elem_prev_row)
+            row.append(row[-1] + last_elem_prev_row)
+            # Fill backwards
+            first_elem_prev_row = rows[index - 1][0] if index != 0 else 0
+            row.insert(0, row[0] - first_elem_prev_row)
         top_row = rows[-1]
-        result += top_row[-1]
-    return result
+        result_part1 += top_row[-1]
+        result_part2 += top_row[0]
+    return result_part1, result_part2
 
 
-print(part1())
+print(*solve(), sep="\n")
