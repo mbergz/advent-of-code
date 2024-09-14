@@ -18,48 +18,45 @@ func main() {
 }
 
 func part1(input string) {
-	fromRange := util.ToInt(strings.Split(strings.TrimSpace(input), "-")[0])
-	toRange := util.ToInt(strings.Split(strings.TrimSpace(input), "-")[1])
-
-	possibleNumbers := 0
-	for i := fromRange + 1; i < toRange; i++ {
-		if isIncreasing(i) && hasDouble(i) {
-			possibleNumbers++
-		}
-	}
-	fmt.Println(possibleNumbers)
+	defer util.Timer()()
+	solve(input, false)
 }
 
 func part2(input string) {
+	defer util.Timer()()
+	solve(input, true)
+}
+
+func solve(input string, isPart2 bool) {
 	fromRange := util.ToInt(strings.Split(strings.TrimSpace(input), "-")[0])
 	toRange := util.ToInt(strings.Split(strings.TrimSpace(input), "-")[1])
 
 	possibleNumbers := 0
 	for i := fromRange + 1; i < toRange; i++ {
-		if isIncreasing(i) && hasDoublePart2(i) {
+		if !isIncreasing(i) {
+			i = adjust(i)
+			if i >= toRange {
+				break
+			}
+		}
+		if hasDouble(i, isPart2) {
 			possibleNumbers++
 		}
 	}
 	fmt.Println(possibleNumbers)
 }
 
-func hasDouble(nbr int) bool {
-	occurences := make(map[int]int)
-	converted := strconv.Itoa(nbr)
-
-	for i := 0; i < len(converted); i++ {
-		nbr := util.ToInt(string(converted[i]))
-		occurences[nbr] = occurences[nbr] + 1
-	}
-	for _, value := range occurences {
-		if value > 1 {
-			return true
+func adjust(nbr int) int {
+	str := strconv.Itoa(nbr)
+	for i := 1; i < len(str); i++ {
+		if util.ToInt(string(str[i])) < util.ToInt(string(str[i-1])) {
+			return util.ToInt(str[:i] + strings.Repeat(string(str[i-1]), len(str)-i))
 		}
 	}
-	return false
+	return nbr
 }
 
-func hasDoublePart2(nbr int) bool {
+func hasDouble(nbr int, isPart2 bool) bool {
 	occurences := make(map[int]int)
 	converted := strconv.Itoa(nbr)
 
@@ -67,10 +64,15 @@ func hasDoublePart2(nbr int) bool {
 		nbr := util.ToInt(string(converted[i]))
 		occurences[nbr] = occurences[nbr] + 1
 	}
-
 	for _, value := range occurences {
-		if value == 2 {
-			return true
+		if isPart2 {
+			if value == 2 {
+				return true
+			}
+		} else {
+			if value > 1 {
+				return true
+			}
 		}
 	}
 	return false
