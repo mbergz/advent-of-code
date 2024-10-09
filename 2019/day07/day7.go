@@ -79,7 +79,7 @@ func part2(input string) {
 
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, setting[0], chE, chA)
+			runIntCodeProgramPart2(input, chE, chA)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -89,24 +89,27 @@ func part2(input string) {
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, setting[1], chA, chB)
+			runIntCodeProgramPart2(input, chA, chB)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, setting[2], chB, chC)
+			runIntCodeProgramPart2(input, chB, chC)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, setting[3], chC, chD)
+			runIntCodeProgramPart2(input, chC, chD)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, setting[4], chD, chE)
+			runIntCodeProgramPart2(input, chD, chE)
 		}()
 
-		go func() {
-			chE <- 0
-		}()
+		chE <- setting[0]
+		chA <- setting[1]
+		chB <- setting[2]
+		chC <- setting[3]
+		chD <- setting[4]
+		chE <- 0
 
 		wg.Wait()
 	}
@@ -177,9 +180,8 @@ main:
 	panic("Should not happen!")
 }
 
-func runIntCodeProgramPart2(input string, phaseSetting int, inputChannel chan int, outputChannel chan int) {
+func runIntCodeProgramPart2(input string, inputChannel chan int, outputChannel chan int) {
 	intArr := createIntArrFromInput(input)
-	firstRun := true
 
 main:
 	for i := 0; i < len(intArr); {
@@ -194,13 +196,8 @@ main:
 			intArr[intArr[i+3]] = getValueByMode(intArr, i+1, paramModes[0]) * getValueByMode(intArr, i+2, paramModes[1])
 			i += 4
 		case 3:
-			if firstRun {
-				intArr[intArr[i+1]] = phaseSetting
-				firstRun = false
-			} else {
-				var receivedInput int = <-inputChannel
-				intArr[intArr[i+1]] = receivedInput
-			}
+			var receivedInput int = <-inputChannel
+			intArr[intArr[i+1]] = receivedInput
 			i += 2
 		case 4:
 			outVal := getValueByMode(intArr, i+1, paramModes[0])
