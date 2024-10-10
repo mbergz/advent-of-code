@@ -15,6 +15,13 @@ func ToInt(stringVal string) int {
 	return res
 }
 
+func AbsInt(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func Timer() func() {
 	startTime := time.Now()
 
