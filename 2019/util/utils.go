@@ -22,6 +22,32 @@ func AbsInt(x int) int {
 	return x
 }
 
+/**
+ * LCM using GCD formula
+ *
+ * lcm(a,b,c) = lcm(a,lcm(b,c))
+ */
+func Lcm(nbrs []int) int {
+	if len(nbrs) == 2 {
+		return lcmInternal(nbrs[0], nbrs[1])
+	}
+	return lcmInternal(nbrs[0], Lcm(nbrs[1:]))
+}
+
+func lcmInternal(a int, b int) int {
+	return (a * b) / gcd(a, b)
+}
+
+// https://en.wikipedia.org/wiki/Euclidean_algorithm
+func gcd(a int, b int) int {
+	for b != 0 {
+		temp := b
+		b = a % b
+		a = temp
+	}
+	return a
+}
+
 func Timer() func() {
 	startTime := time.Now()
 
