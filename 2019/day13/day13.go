@@ -147,9 +147,6 @@ func part2(input string) {
 							maxY = max(maxY, key.y)
 						}
 
-						fmt.Println("MaxX", maxX)
-						fmt.Println("MaxYs", maxY)
-
 						gameActive = true
 					}
 
