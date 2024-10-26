@@ -3,6 +3,7 @@ package main
 import (
 	"advent-of-code_2019/util"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -27,13 +28,9 @@ type Coord struct {
 	y int
 }
 
-func main() {
-	input, err := os.ReadFile("./day15.txt")
-	if err != nil {
-		panic(err)
-	}
-	part1(string(input))
-	part2(string(input))
+type CoordLevel struct {
+	coord Coord
+	level int
 }
 
 type Path struct {
@@ -41,6 +38,15 @@ type Path struct {
 	comp          *IntcodeComp
 	fromDirection int
 	length        int
+}
+
+func main() {
+	input, err := os.ReadFile("./day15.txt")
+	if err != nil {
+		panic(err)
+	}
+	part1(string(input))
+	part2(string(input))
 }
 
 func part1(input string) {
@@ -89,6 +95,69 @@ func getNewCoord(curr Coord, newDirection int) Coord {
 func part2(input string) {
 	defer util.Timer()()
 
+	// BFS to find coord for oxygensystem and build up visited map
+	queue := make([]Path, 0)
+	queue = append(queue, Path{Coord{0, 0}, initilizeComputer(input), 0, 0})
+	visited := make(map[Coord]bool)
+	var foundOxyGenSystem Coord
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		for nextDir := 1; nextDir <= 4; nextDir++ {
+			if nextDir == curr.fromDirection {
+				continue
+			}
+			computer := curr.comp.copy()
+			output := computer.stepOne(nextDir)
+
+			if output == 1 {
+				newCoord := getNewCoord(curr.coord, nextDir)
+				fromDir := fromDirection[nextDir]
+
+				if _, ok := visited[newCoord]; !ok {
+					visited[newCoord] = true
+					queue = append(queue, Path{newCoord, computer, fromDir, curr.length + 1})
+				}
+			} else if output == 2 {
+				foundOxyGenSystem = getNewCoord(curr.coord, nextDir)
+			}
+		}
+	}
+
+	// BFS from oxygensystem outwards, use visited map to traverse and count levels
+	fmt.Println(countLevelsBfs(foundOxyGenSystem, visited))
+}
+
+func countLevelsBfs(start Coord, visitedMap map[Coord]bool) int {
+	queue := make([]CoordLevel, 0)
+	queue = append(queue, CoordLevel{start, 0})
+	visited := make(map[Coord]bool)
+
+	maxLevel := math.MinInt
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		maxLevel = max(maxLevel, curr.level)
+
+		coordNorth := getNewCoord(curr.coord, 1) // north
+		coordSouth := getNewCoord(curr.coord, 2) // south
+		coordWest := getNewCoord(curr.coord, 3)  // west
+		coordEast := getNewCoord(curr.coord, 4)  // east
+
+		for key, _ := range visitedMap {
+			if key == coordNorth || key == coordSouth || key == coordWest || key == coordEast {
+				if _, ok := visited[key]; !ok {
+					visited[key] = true
+					queue = append(queue, CoordLevel{key, curr.level + 1})
+				}
+			}
+		}
+	}
+	return maxLevel
 }
 
 type IntcodeComp struct {
