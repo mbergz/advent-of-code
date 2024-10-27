@@ -28,30 +28,25 @@ func part1(input string) {
 	}
 
 	for phase := 1; phase <= 100; phase++ {
-		newNbrs := make([]int, 0)
-
 		for itr := 1; itr <= len(nbrs); itr++ {
-			pattern := createPattern(itr, len(nbrs))
-
-			inputDigits := make([]int, 0)
-			for i := 0; i < len(nbrs); i++ {
-				newNbr := nbrs[i] * pattern[i]
-				inputDigits = append(inputDigits, leastSignificantBit(newNbr))
+			sum := 0
+			for i := itr - 1; i < len(nbrs); i++ {
+				newNbr := nbrs[i] * getPatternModifier(itr, i)
+				sum += leastSignificantBit(newNbr)
 			}
-			var sum int = 0
-			for _, inDigit := range inputDigits {
-				sum += int(inDigit)
-			}
-			newNbrs = append(newNbrs, util.AbsInt(leastSignificantBit(sum)))
+			nbrs[itr-1] = util.AbsInt(leastSignificantBit(sum))
 		}
-
-		nbrs = newNbrs
 	}
 
 	for _, nbr := range nbrs {
 		fmt.Print(nbr)
 	}
 	fmt.Println()
+}
+
+func part2(input string) {
+	defer util.Timer()()
+
 }
 
 func leastSignificantBit(nbr int) int {
@@ -62,30 +57,7 @@ func leastSignificantBit(nbr int) int {
 	}
 }
 
-func createPattern(iteration int, maxLength int) []int {
-	modifiedBase := make([]int, 0)
-	for _, baseNbr := range basePattern {
-		for i := 0; i < iteration; i++ {
-			modifiedBase = append(modifiedBase, baseNbr)
-		}
-	}
-
-	resultArr := make([]int, 0)
-
-	for len(resultArr) != maxLength+1 {
-		diff := (maxLength + 1) - len(resultArr)
-
-		if diff < len(modifiedBase) {
-			resultArr = append(resultArr, modifiedBase[:diff]...)
-		} else {
-			resultArr = append(resultArr, modifiedBase...)
-		}
-	}
-
-	return resultArr[1:]
-}
-
-func part2(input string) {
-	defer util.Timer()()
-
+func getPatternModifier(iteration int, index int) int {
+	pos := (index + 1) / iteration
+	return basePattern[pos%4]
 }
