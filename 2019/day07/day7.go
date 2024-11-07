@@ -1,12 +1,11 @@
 package main
 
 import (
+	"advent-of-code_2019/intcodecomputer"
 	"advent-of-code_2019/util"
 	"fmt"
 	"math"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -47,11 +46,12 @@ func part1(input string) {
 	var max float64 = 0
 
 	for _, setting := range result {
-		outputA := runIntCodeProgram(input, setting[0], 0)
-		outputB := runIntCodeProgram(input, setting[1], outputA)
-		outputC := runIntCodeProgram(input, setting[2], outputB)
-		outputD := runIntCodeProgram(input, setting[3], outputC)
-		outputE := runIntCodeProgram(input, setting[4], outputD)
+
+		outputA := intcodecomputer.InitilizeComputer(input).Run([]int{setting[0], 0})[0]
+		outputB := intcodecomputer.InitilizeComputer(input).Run([]int{setting[1], outputA})[0]
+		outputC := intcodecomputer.InitilizeComputer(input).Run([]int{setting[2], outputB})[0]
+		outputD := intcodecomputer.InitilizeComputer(input).Run([]int{setting[3], outputC})[0]
+		outputE := intcodecomputer.InitilizeComputer(input).Run([]int{setting[4], outputD})[0]
 		max = math.Max(float64(outputE), float64(max))
 	}
 
@@ -79,7 +79,7 @@ func part2(input string) {
 
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, chE, chA)
+			intcodecomputer.InitilizeComputer(input).RunChannels(chE, chA)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -89,19 +89,19 @@ func part2(input string) {
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, chA, chB)
+			intcodecomputer.InitilizeComputer(input).RunChannels(chA, chB)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, chB, chC)
+			intcodecomputer.InitilizeComputer(input).RunChannels(chB, chC)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, chC, chD)
+			intcodecomputer.InitilizeComputer(input).RunChannels(chC, chD)
 		}()
 		go func() {
 			defer wg.Done()
-			runIntCodeProgramPart2(input, chD, chE)
+			intcodecomputer.InitilizeComputer(input).RunChannels(chD, chE)
 		}()
 
 		chE <- setting[0]
@@ -114,172 +114,4 @@ func part2(input string) {
 		wg.Wait()
 	}
 	fmt.Println(int(max))
-}
-
-func runIntCodeProgram(input string, phaseSetting int, inputSignal int) int {
-	intArr := createIntArrFromInput(input)
-	firstRun := true
-
-main:
-	for i := 0; i < len(intArr); {
-		opCode := getOpCode(intArr[i])
-		paramModes := getParameterModes(intArr[i])
-
-		switch opCode {
-		case 1:
-			intArr[intArr[i+3]] = getValueByMode(intArr, i+1, paramModes[0]) + getValueByMode(intArr, i+2, paramModes[1])
-			i += 4
-		case 2:
-			intArr[intArr[i+3]] = getValueByMode(intArr, i+1, paramModes[0]) * getValueByMode(intArr, i+2, paramModes[1])
-			i += 4
-		case 3:
-			if firstRun {
-				intArr[intArr[i+1]] = phaseSetting
-				firstRun = false
-			} else {
-				intArr[intArr[i+1]] = inputSignal
-			}
-			i += 2
-		case 4:
-			outVal := getValueByMode(intArr, i+1, paramModes[0])
-			//fmt.Printf("Output: %d\n", outVal)
-			return outVal
-			//i += 2
-		case 5:
-			if getValueByMode(intArr, i+1, paramModes[0]) > 0 {
-				i = getValueByMode(intArr, i+2, paramModes[1])
-			} else {
-				i += 3
-			}
-		case 6:
-			if getValueByMode(intArr, i+1, paramModes[0]) == 0 {
-				i = getValueByMode(intArr, i+2, paramModes[1])
-			} else {
-				i += 3
-			}
-		case 7:
-			if getValueByMode(intArr, i+1, paramModes[0]) < getValueByMode(intArr, i+2, paramModes[1]) {
-				intArr[intArr[i+3]] = 1
-			} else {
-				intArr[intArr[i+3]] = 0
-			}
-			i += 4
-		case 8:
-			if getValueByMode(intArr, i+1, paramModes[0]) == getValueByMode(intArr, i+2, paramModes[1]) {
-				intArr[intArr[i+3]] = 1
-			} else {
-				intArr[intArr[i+3]] = 0
-			}
-			i += 4
-		case 99:
-			break main
-		default:
-			panic("Invalid opcode")
-		}
-	}
-	panic("Should not happen!")
-}
-
-func runIntCodeProgramPart2(input string, inputChannel chan int, outputChannel chan int) {
-	intArr := createIntArrFromInput(input)
-
-main:
-	for i := 0; i < len(intArr); {
-		opCode := getOpCode(intArr[i])
-		paramModes := getParameterModes(intArr[i])
-
-		switch opCode {
-		case 1:
-			intArr[intArr[i+3]] = getValueByMode(intArr, i+1, paramModes[0]) + getValueByMode(intArr, i+2, paramModes[1])
-			i += 4
-		case 2:
-			intArr[intArr[i+3]] = getValueByMode(intArr, i+1, paramModes[0]) * getValueByMode(intArr, i+2, paramModes[1])
-			i += 4
-		case 3:
-			var receivedInput int = <-inputChannel
-			intArr[intArr[i+1]] = receivedInput
-			i += 2
-		case 4:
-			outVal := getValueByMode(intArr, i+1, paramModes[0])
-			outputChannel <- outVal
-			i += 2
-		case 5:
-			if getValueByMode(intArr, i+1, paramModes[0]) > 0 {
-				i = getValueByMode(intArr, i+2, paramModes[1])
-			} else {
-				i += 3
-			}
-		case 6:
-			if getValueByMode(intArr, i+1, paramModes[0]) == 0 {
-				i = getValueByMode(intArr, i+2, paramModes[1])
-			} else {
-				i += 3
-			}
-		case 7:
-			if getValueByMode(intArr, i+1, paramModes[0]) < getValueByMode(intArr, i+2, paramModes[1]) {
-				intArr[intArr[i+3]] = 1
-			} else {
-				intArr[intArr[i+3]] = 0
-			}
-			i += 4
-		case 8:
-			if getValueByMode(intArr, i+1, paramModes[0]) == getValueByMode(intArr, i+2, paramModes[1]) {
-				intArr[intArr[i+3]] = 1
-			} else {
-				intArr[intArr[i+3]] = 0
-			}
-			i += 4
-		case 99:
-			break main
-		default:
-			panic("Invalid opcode")
-		}
-	}
-}
-
-func createIntArrFromInput(input string) []int {
-	strArr := strings.Split(input, ",")
-	intArr := make([]int, len(strArr))
-	for i, val := range strArr {
-		intArr[i] = util.ToInt(val)
-	}
-	return intArr
-}
-
-func getOpCode(nbr int) int {
-	str := strconv.Itoa(nbr)
-	if len(str) > 1 {
-		return util.ToInt(str[len(str)-2:])
-	}
-	return util.ToInt(str)
-}
-
-func getParameterModes(nbr int) map[int]int {
-	mapping := map[int]int{
-		0: 0,
-		1: 0,
-		2: 0,
-	}
-	str := strconv.Itoa(nbr)
-	length := len(str)
-
-	if length > 2 {
-		mapping[0] = util.ToInt(string(str[length-3]))
-	}
-	if length > 3 {
-		mapping[1] = util.ToInt(string(str[length-4]))
-	}
-	if length > 4 {
-		mapping[2] = util.ToInt(string(str[length-5]))
-	}
-
-	return mapping
-}
-
-func getValueByMode(arr []int, index int, paramMode int) int {
-	if paramMode == 1 {
-		return arr[index]
-	} else { // Must be 0
-		return arr[arr[index]]
-	}
 }
