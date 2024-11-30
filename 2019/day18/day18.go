@@ -38,6 +38,12 @@ type Node struct {
 	keys   string
 }
 
+type NodePart2 struct {
+	coords [4]Coord
+	length int
+	keys   string
+}
+
 type VisitedNode struct {
 	coord Coord
 	keys  string
@@ -52,6 +58,10 @@ func main() {
 		panic(err)
 	}
 	part1(string(input))
+
+	// Reset
+	nbrOfKeys = 0
+	shortest = math.MaxInt
 	part2(string(input))
 }
 
@@ -61,7 +71,13 @@ func part1(input string) {
 	grid := buildGrid(input)
 
 	floodFillBfs(grid)
+}
 
+func part2(input string) {
+	defer util.Timer()()
+
+	grid := buildGrid(input)
+	floodFillBfsPart2(grid)
 }
 
 func floodFillBfs(grid [][]rune) {
@@ -76,7 +92,7 @@ func floodFillBfs(grid [][]rune) {
 		current := queue[0]
 		queue = queue[1:]
 
-		for _, next := range getAllNext(current, grid) {
+		for _, next := range getNext(current.coord, grid) {
 			var nextChar rune = grid[next.y][next.x]
 
 			if nextChar != '#' {
@@ -120,6 +136,84 @@ func floodFillBfs(grid [][]rune) {
 	fmt.Println(shortest)
 }
 
+func floodFillBfsPart2(grid [][]rune) {
+	start := getStartingNode(grid)
+
+	grid[start.y][start.x] = '#'
+
+	grid[start.y-1][start.x] = '#'
+	grid[start.y+1][start.x] = '#'
+	grid[start.y][start.x+1] = '#'
+	grid[start.y][start.x-1] = '#'
+
+	startOne := Coord{start.x - 1, start.y - 1}
+	startTwo := Coord{start.x + 1, start.y - 1}
+	startThree := Coord{start.x - 1, start.y + 1}
+	startFour := Coord{start.x + 1, start.y + 1}
+
+	queue := make([]NodePart2, 0)
+
+	queue = append(queue, NodePart2{
+		[4]Coord{startOne, startTwo, startThree, startFour},
+		0,
+		""})
+
+	visited := make(map[VisitedNode]int)
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		for i := 0; i < 4; i++ {
+
+			for _, next := range getNext(current.coords[i], grid) {
+				var nextChar rune = grid[next.y][next.x]
+
+				newCoords := current.coords
+				newCoords[i] = next
+
+				if nextChar != '#' {
+					newNode := NodePart2{
+						newCoords,
+						current.length + 1,
+						current.keys,
+					}
+
+					newVisited := VisitedNode{next, sortKeys(current.keys)}
+					if length, ok := visited[newVisited]; ok {
+						if length <= current.length+1 {
+							continue
+						}
+					}
+					visited[newVisited] = current.length + 1
+
+					if isLowerCase(nextChar) {
+						if !strings.ContainsRune(current.keys, nextChar) {
+							newNode.keys = current.keys + string(nextChar)
+							if len(newNode.keys) == nbrOfKeys {
+								shortest = min(shortest, current.length+1)
+								continue
+							}
+						}
+						queue = append(queue, newNode)
+
+					} else if isUpperCase(nextChar) {
+						if strings.ContainsRune(strings.ToUpper(current.keys), nextChar) {
+							// door is unlocked
+							queue = append(queue, newNode)
+						}
+					} else {
+						queue = append(queue, newNode)
+					}
+				}
+			}
+
+		}
+
+	}
+	fmt.Println(shortest)
+}
+
 func sortKeys(keys string) string {
 	runes := []rune(keys)
 	sort.Slice(runes, func(i, j int) bool { return runes[i] < runes[j] })
@@ -141,14 +235,13 @@ func getStartingNode(grid [][]rune) Coord {
 	return startCoord
 }
 
-func getAllNext(current Node, grid [][]rune) []Coord {
+func getNext(current Coord, grid [][]rune) []Coord {
 	res := make([]Coord, 0)
 	for d := UP; d <= LEFT; d++ {
 		delta := coordDirMap[d]
-		newCoord := Coord{current.coord.x + delta.x, current.coord.y + delta.y}
+		newCoord := Coord{current.x + delta.x, current.y + delta.y}
 		_, error := getCharInGrid(grid, newCoord)
 		if error == nil {
-
 			res = append(res, newCoord)
 		}
 	}
@@ -189,9 +282,4 @@ func buildGrid(input string) [][]rune {
 		res = append(res, row)
 	}
 	return res
-}
-
-func part2(input string) {
-	defer util.Timer()()
-
 }
