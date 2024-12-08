@@ -37,15 +37,46 @@ def part1():
     print(len(visited))
 
 
+def part2():
+    orig_grid = []
+    for line in lines:
+        orig_grid.append(line.strip())
+
+    count = 0
+    for y, row in enumerate(orig_grid):
+        for x, val in enumerate(row):
+            if val == '^' or val == '#':
+                continue
+            grid = orig_grid[:]
+            grid[y] = grid[y][:x] + '#' + grid[y][x + 1:]
+            if is_stuck_loop(grid):
+                count += 1
+    print(count)
+
+
+def is_stuck_loop(grid):
+    x, y = find_start(grid)
+    visited = set()
+    dir = 0
+
+    while True:
+        new_x, new_y = x + direction_map[dir][0], y + direction_map[dir][1]
+        if new_x < 0 or new_x >= len(grid[0]) or new_y < 0 or new_y >= len(grid):
+            return False
+        while grid[new_y][new_x] == '#':
+            dir = turn_90_right_map[dir]
+            new_x, new_y = x + direction_map[dir][0], y + direction_map[dir][1]
+        x, y = new_x, new_y
+        if (x, y, dir) in visited:
+            return True
+        visited.add((x, y, dir))
+
+
 def find_start(grid):
     for y, row in enumerate(grid):
         for x, val in enumerate(row):
             if val == '^':
                 return x, y
-
-
-def part2():
-    print("score")
 
 
 part1()
