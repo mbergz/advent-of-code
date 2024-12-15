@@ -19,6 +19,16 @@ def part1():
     print(total_score)
 
 
+def part2():
+    grid = []
+    for line in lines:
+        grid.append(line.strip())
+    total_score = 0
+    for head in find_trail_heads(grid):
+        total_score += len(dfs_part2(head, grid, []))
+    print(total_score)
+
+
 def find_trail_heads(grid):
     res = []
     for rowI, row in enumerate(grid):
@@ -42,6 +52,22 @@ def dfs(coord, grid, path):
     return found
 
 
+def dfs_part2(coord, grid, path):
+    path = path + [coord]
+    paths = []
+
+    if grid[coord[1]][coord[0]] == "9":
+        paths.append(path)
+
+    for next_coord in get_next_coords(coord, grid):
+        if next_coord not in path:
+            res = dfs_part2(next_coord, grid, path)
+            if res:
+                paths.extend(res)
+
+    return paths
+
+
 def get_next_coords(current, grid):
     current_nbr = int(grid[current[1]][current[0]])
     res = []
@@ -52,10 +78,6 @@ def get_next_coords(current, grid):
         if int(grid[new_coord[1]][new_coord[0]]) == current_nbr + 1:
             res.append(new_coord)
     return res
-
-
-def part2():
-    print("score")
 
 
 part1()
