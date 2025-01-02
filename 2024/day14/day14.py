@@ -11,19 +11,27 @@ def part1():
         pos = extract_pos(line)
         velo = extract_velo(line)
         robots[i] = (pos, velo)
-    # print_map(robots)
     for _ in range(100):
         for k in robots:
             update_pos(k, robots)
-    # print_map(robots)
     print(count_quadrants(robots))
 
 
 def part2():
-    print("score")
+    robots = {}
+    for i, line in enumerate(lines):
+        pos = extract_pos(line)
+        velo = extract_velo(line)
+        robots[i] = (pos, velo)
+    itr = 1
+    while True:
+        for k in robots:
+            update_pos(k, robots)
+        if sparse_robots_top_rows(robots):
+            print_map(robots, itr)
+        itr += 1
 
 
-# 234906525 too high
 def count_quadrants(robots):
     first = 0
     second = 0
@@ -44,6 +52,19 @@ def count_quadrants(robots):
             fourth += 1
             continue
     return first * second * third * fourth
+
+
+def sparse_robots_top_rows(robots):
+    count = 0
+    for k in robots:
+        robot = robots[k]
+        if robot[0][1] > 5:
+            continue
+        if 0 <= robot[0][0] <= int(WIDTH / 4) or int(WIDTH / 4) * 3 <= robot[0][0] <= WIDTH:
+            count += 1
+    if count > 5:
+        return False
+    return True
 
 
 def update_pos(key, robots):
@@ -68,7 +89,8 @@ def extract_pos(line):
     return x, y
 
 
-def print_map(robots):
+def print_map(robots, iteration):
+    print("ITR: " + str(iteration))
     for r in range(0, HEIGHT):
         for c in range(0, WIDTH):
             found_nbr = 0
@@ -76,9 +98,9 @@ def print_map(robots):
                 if robots[k][0] == (c, r):
                     found_nbr += 1
             if found_nbr == 0:
-                print(". ", end="")
+                print(".", end="")
             else:
-                print(str(found_nbr) + " ", end="")
+                print(str(found_nbr), end="")
         print("")
     print("")
 
