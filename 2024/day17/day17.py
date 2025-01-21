@@ -1,7 +1,7 @@
 import math
 
-input_file = open('day17.txt', 'r')
-lines = input_file.readlines()
+with open('day17.txt', 'r') as input_file:
+    lines = input_file.readlines()
 
 
 class Computer:
@@ -97,4 +97,49 @@ def part1():
     comp.print()
 
 
+# Thanks /r/adventofcode for some hints
+def part2():
+    input = list(map(int, lines[4].split(":")[1].strip().split(",")))
+    # Find nbr that matches the last nbr in program , then continue left, because of the right shifting in A
+    # Start with 0, explore all possible matches, then perform left shift 3 and do same for all 16 nbrs
+    results = []
+    find_all_possible_solutions(0, input, 15, results)
+    print(min(results))
+
+
+def find_all_possible_solutions(current_a, input_list, find_output_idx, possible_results):
+    if find_output_idx < 0:
+        return
+    length = len(input_list) - find_output_idx
+
+    for i in range(8):
+        res = run(current_a, length)
+        if res[0] == input_list[find_output_idx]:
+            if res == input_list:
+                possible_results.append(current_a)
+            else:
+                find_all_possible_solutions(current_a << 3, input_list, find_output_idx - 1, possible_results)
+        current_a += 1
+
+
+# A % 8, take 3 LSB
+# XOR 1 (^1) means flip the least LSB (101 XOR 001 = 100)
+# A / 2**B means right shift A B nbr of steps, C = A >> B
+# A/ 8 => A >> 3 (A/2**3)
+# Each iteration shifts A 3 bits to the right (A *= 8)
+def run(nbr, length):
+    out_arr = []
+    a = nbr
+    for _ in range(length):
+        b = a % 8
+        b = b ^ 1
+        c = int(math.trunc(a / (2 ** b)))
+        b = b ^ 5
+        b = b ^ c
+        a = int(math.trunc(a / 8))
+        out_arr.append(b % 8)
+    return out_arr
+
+
 part1()
+part2()
