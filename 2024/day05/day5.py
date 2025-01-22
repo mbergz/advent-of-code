@@ -1,10 +1,9 @@
 from functools import cmp_to_key
 
-input_file = open('day5.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     rules = lines[0: lines.index("\n")]
     updates = lines[lines.index("\n") + 1:len(lines)]
 
@@ -17,7 +16,7 @@ def part1():
     print(score)
 
 
-def part2():
+def part2(lines):
     rules = lines[0: lines.index("\n")]
     updates = lines[lines.index("\n") + 1:len(lines)]
 
@@ -63,5 +62,4 @@ def fix_invalid_line(update_line, updated_first_map):
     return int(sorted_list[int(len(sorted_list) / 2)])
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

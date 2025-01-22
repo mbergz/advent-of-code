@@ -1,17 +1,16 @@
 import re
 
-input_file = open('day3.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     one_line = ''.join(line.strip() for line in lines)
     matches = re.findall("mul\(([0-9]{1,3},[0-9]{1,3})\)", one_line)
     score = sum(int(m.split(",")[0]) * int(m.split(",")[1]) for m in matches)
     print(score)
 
 
-def part2():
+def part2(lines):
     one_line = ''.join(line.strip() for line in lines)
     mul_matches = list(re.finditer("mul\(([0-9]{1,3},[0-9]{1,3})\)", one_line))
     conditional_matches = list(re.finditer(r"do\(\)|don't\(\)", one_line))
@@ -42,5 +41,4 @@ def get_new_conditional_matches(index, conditional_matches):
     return conditional_matches[found:]
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

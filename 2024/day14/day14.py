@@ -1,11 +1,10 @@
-input_file = open('day14.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 WIDTH = 101
 HEIGHT = 103
 
 
-def part1():
+def part1(lines):
     robots = {}
     for i, line in enumerate(lines):
         pos = extract_pos(line)
@@ -17,7 +16,7 @@ def part1():
     print(count_quadrants(robots))
 
 
-def part2():
+def part2(lines):
     robots = {}
     for i, line in enumerate(lines):
         pos = extract_pos(line)
@@ -105,5 +104,4 @@ def print_map(robots, iteration):
     print("")
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

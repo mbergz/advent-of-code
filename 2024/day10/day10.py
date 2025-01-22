@@ -1,5 +1,4 @@
-input_file = open('day10.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 directions = [
     (0, 1),
@@ -9,7 +8,7 @@ directions = [
 ]
 
 
-def part1():
+def part1(lines):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -19,7 +18,7 @@ def part1():
     print(total_score)
 
 
-def part2():
+def part2(lines):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -80,5 +79,4 @@ def get_next_coords(current, grid):
     return res
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

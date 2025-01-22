@@ -1,5 +1,4 @@
-input_file = open('day12.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 directions = [
     (0, 1),  # down
@@ -20,8 +19,8 @@ all_dirs_map = {
 }
 
 
-def part1():
-    all_plants, grid = initialize_grid_plants()
+def part1(lines):
+    all_plants, grid = initialize_grid_plants(lines)
     score = 0
     visited = []
     while len(all_plants) > 0:
@@ -46,8 +45,8 @@ def part1():
     print(score)
 
 
-def part2():
-    all_plants, grid = initialize_grid_plants()
+def part2(lines):
+    all_plants, grid = initialize_grid_plants(lines)
     score = 0
     visited = []
     while len(all_plants) > 0:
@@ -70,7 +69,7 @@ def part2():
     print(score)
 
 
-def initialize_grid_plants():
+def initialize_grid_plants(lines):
     grid = []
     all_plants = []
     for row_index, line in enumerate(lines):
@@ -127,5 +126,4 @@ def is_matching_plant(grid, plant):
     return False
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

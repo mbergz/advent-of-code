@@ -1,10 +1,9 @@
 import itertools
 
-input_file = open('day8.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     grid = []
     antenna_map = {}
     for row_index, line in enumerate(lines):
@@ -30,7 +29,7 @@ def part1():
     print(len(set(antinodes)))
 
 
-def part2():
+def part2(lines):
     grid = []
     antenna_map = {}
     for row_index, line in enumerate(lines):
@@ -89,5 +88,4 @@ def add_if_not_outside_map(coord, grid, antinodes):
     return False
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

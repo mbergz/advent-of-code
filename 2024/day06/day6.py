@@ -1,5 +1,4 @@
-input_file = open('day6.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 direction_map = {
     0: (0, -1),  # up
@@ -16,7 +15,7 @@ turn_90_right_map = {
 }
 
 
-def part1():
+def part1(lines):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -37,7 +36,7 @@ def part1():
     print(len(visited))
 
 
-def part2():
+def part2(lines):
     orig_grid = []
     for line in lines:
         orig_grid.append(line.strip())
@@ -79,5 +78,4 @@ def find_start(grid):
                 return x, y
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

@@ -1,8 +1,7 @@
-input_file = open('day2.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     score = 0
     for line in lines:
         parts = list(map(int, line.split()))
@@ -11,7 +10,7 @@ def part1():
     print(score)
 
 
-def part2():
+def part2(lines):
     score = 0
     for line in lines:
         parts = list(map(int, line.split()))
@@ -39,5 +38,4 @@ def is_safe(levels):
     return True
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

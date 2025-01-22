@@ -3,8 +3,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import List, Tuple
 
-input_file = open('day16.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 direction_map = {
     "^": (0, -1),  # up
@@ -37,7 +36,15 @@ class Node:
     visited: List[Tuple[int, int]]
 
 
-def solve():
+def part1(lines):
+    solve(lines, False)
+
+
+def part2(lines):
+    solve(lines, True)
+
+
+def solve(lines, is_part2):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -63,9 +70,11 @@ def solve():
             if (n.x, n.y) not in visited or visited[(n.x, n.y)] >= n.score:
                 queue.append(n)
 
-    print(f"Part1: {min_score}")
-    lowest_key = min(best_path_tiles.keys())
-    print(f"Part2: {len(best_path_tiles[lowest_key])}")
+    if not is_part2:
+        print(min_score)
+    else:
+        lowest_key = min(best_path_tiles.keys())
+        print(f"{len(best_path_tiles[lowest_key])}")
 
 
 def get_next(curr, grid):
@@ -97,4 +106,4 @@ def find_start(grid):
                 return Node(col_i, row_i, ">", 0, [])
 
 
-solve()
+PuzzleRunner().run(part1, part2)

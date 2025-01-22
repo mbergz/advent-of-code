@@ -1,7 +1,6 @@
 import math
 
-with open('day17.txt', 'r') as input_file:
-    lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
 class Computer:
@@ -86,7 +85,7 @@ class Computer:
             raise Exception("Invalid jump operand 7")
 
 
-def part1():
+def part1(lines):
     reg_a = int(lines[0].split(":")[1].strip())
     reg_b = int(lines[1].split(":")[1].strip())
     reg_c = int(lines[2].split(":")[1].strip())
@@ -98,7 +97,7 @@ def part1():
 
 
 # Thanks /r/adventofcode for some hints
-def part2():
+def part2(lines):
     input = list(map(int, lines[4].split(":")[1].strip().split(",")))
     # Find nbr that matches the last nbr in program , then continue left, because of the right shifting in A
     # Start with 0, explore all possible matches, then perform left shift 3 and do same for all 16 nbrs
@@ -141,5 +140,4 @@ def run(nbr, length):
     return out_arr
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

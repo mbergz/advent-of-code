@@ -1,5 +1,4 @@
-input_file = open('day15.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 direction_map = {
     "^": (0, -1),  # up
@@ -9,8 +8,8 @@ direction_map = {
 }
 
 
-def part1():
-    grid, movements = parse_input()
+def part1(lines):
+    grid, movements = parse_input(lines)
     curr = find_start(grid)
     for mov in movements:
         curr = move(curr, mov, grid)
@@ -22,15 +21,15 @@ def part1():
     print(result)
 
 
-def part2():
-    grid, movements = parse_input_part2()
+def part2(lines):
+    grid, movements = parse_input_part2(lines)
     curr = find_start(grid)
     blocks = find_all_blocks(grid)
     # print_grid(grid, blocks, 0)
     for i, mov in enumerate(movements):
         curr = move_part2(curr, mov, grid, blocks)
         # print_grid(grid, blocks, i)
-    #print_grid(grid, blocks, 0)
+    # print_grid(grid, blocks, 0)
     result = sum((100 * b.left[1]) + b.left[0] for b in blocks)
     print(result)
 
@@ -160,7 +159,7 @@ def find_all_blocks(grid):
     return blocks
 
 
-def parse_input():
+def parse_input(lines):
     grid = []
     movements = ""
     read_map = True
@@ -175,7 +174,7 @@ def parse_input():
     return grid, movements
 
 
-def parse_input_part2():
+def parse_input_part2(lines):
     grid = []
     movements = ""
     read_map = True
@@ -200,5 +199,4 @@ def parse_input_part2():
     return grid, movements
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

@@ -1,16 +1,15 @@
 import functools
 
-input_file = open('day11.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     stones = [int(nbr.strip()) for nbr in lines[0].split(" ")]
     score = sum(stone_blink(stone, 0, 25) for stone in stones)
     print(score)
 
 
-def part2():
+def part2(lines):
     stones = [int(nbr.strip()) for nbr in lines[0].split(" ")]
     score = sum(stone_blink(stone, 0, 75) for stone in stones)
     print(score)
@@ -31,5 +30,4 @@ def stone_blink(stone, itr, itr_limit):
         return stone_blink(stone * 2024, itr + 1, itr_limit)
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

@@ -1,9 +1,8 @@
-input_file = open('day9.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
-    memory = read_input_memory()
+def part1(lines):
+    memory = read_input_memory(lines)
     left, right = 0, len(memory) - 1
     while left < right:
         if memory[left] != '.':
@@ -19,8 +18,8 @@ def part1():
     print(score)
 
 
-def part2():
-    memory = read_input_memory()
+def part2(lines):
+    memory = read_input_memory(lines)
     right = len(memory) - 1
 
     visited = []
@@ -66,7 +65,7 @@ def part2():
     print(score)
 
 
-def read_input_memory():
+def read_input_memory(lines):
     memory = []
     block_index = 0
     for index, char in enumerate(lines[0]):
@@ -78,5 +77,4 @@ def read_input_memory():
     return memory
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

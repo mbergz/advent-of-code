@@ -1,10 +1,9 @@
 import numpy as np
 
-input_file = open('day7.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     score = 0
     for line in lines:
         test_value = int(line.split(':')[0])
@@ -24,7 +23,7 @@ def part1():
     print(score)
 
 
-def part2():
+def part2(lines):
     score = 0
     for line in lines:
         test_value = int(line.split(':')[0])
@@ -49,5 +48,4 @@ def part2():
     print(score)
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

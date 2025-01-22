@@ -2,12 +2,11 @@ import sys
 
 import numpy as np
 
-input_file = open('day13.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
 # brute force
-def part1():
+def part1(lines):
     score = 0
     for i in range(0, len(lines), 4):
         chunk = lines[i:i + 3]
@@ -26,7 +25,7 @@ def part1():
 
 
 # linear algebra
-def part2():
+def part2(lines):
     score = 0
     for i in range(0, len(lines), 4):
         chunk = lines[i:i + 3]
@@ -71,5 +70,4 @@ def extract_prize_part2(line):
     return x, y
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)

@@ -1,8 +1,7 @@
-input_file = open('day4.txt', 'r')
-lines = input_file.readlines()
+from runner import PuzzleRunner
 
 
-def part1():
+def part1(lines):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -16,7 +15,7 @@ def part1():
     print(count)
 
 
-def part2():
+def part2(lines):
     grid = []
     for line in lines:
         grid.append(line.strip())
@@ -59,5 +58,4 @@ def find_x_mas(x, y, grid):
     return 0
 
 
-part1()
-part2()
+PuzzleRunner().run(part1, part2)
