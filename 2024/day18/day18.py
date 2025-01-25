@@ -14,7 +14,32 @@ directions = [
 
 
 def part1(lines):
-    coords = [tuple(int(val) for val in x.strip().split(",")) for x in lines[:1024]]
+    run(lines, 1024)
+
+
+def part2(lines):
+    blocks = 1025
+
+    while True:
+        if not run(lines, blocks, part2=True):
+            coords = lines[blocks - 1].strip().split(",")
+            print(f"{int(coords[0])},{int(coords[1])}")
+            break
+        blocks += 1
+
+
+def get_next(curr, grid):
+    res = []
+    for d in directions:
+        next_coord = (curr[0] + d[0], curr[1] + d[1])
+        if (0 <= next_coord[1] < MEM_SPACE_HEIGHT and 0 <= next_coord[0] < MEM_SPACE_WIDTH and
+                grid[next_coord[1]][next_coord[0]] == "."):
+            res.append(next_coord)
+    return res
+
+
+def run(lines, blocks, part2=False):
+    coords = [tuple(int(val) for val in x.strip().split(",")) for x in lines[:blocks]]
     grid = []
     for row in range(MEM_SPACE_HEIGHT):
         grid.append(list("." * MEM_SPACE_WIDTH))
@@ -31,24 +56,16 @@ def part1(lines):
         for _ in range(len(queue)):
             curr = queue.popleft()
             if curr == end:
-                print(steps)
-                return
+                if not part2:
+                    print(steps)
+                return True
 
             for n in get_next(curr, grid):
                 if n not in visited:
                     visited.add(n)
                     queue.append(n)
         steps += 1
+    return False
 
 
-def get_next(curr, grid):
-    res = []
-    for d in directions:
-        next_coord = (curr[0] + d[0], curr[1] + d[1])
-        if (0 <= next_coord[1] < MEM_SPACE_HEIGHT and 0 <= next_coord[0] < MEM_SPACE_WIDTH and
-                grid[next_coord[1]][next_coord[0]] == "."):
-            res.append(next_coord)
-    return res
-
-
-PuzzleRunner().run(part1)
+PuzzleRunner().run(part1, part2)
