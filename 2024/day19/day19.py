@@ -1,3 +1,5 @@
+import functools
+
 from runner import PuzzleRunner
 
 
@@ -8,8 +10,19 @@ def part1(lines):
     for itr, line in enumerate(lines[2:]):
         pattern = line.strip()
         matching_towels = get_matching_towels(pattern, towels)
-        if count_matching(pattern, matching_towels) == len(pattern):
+        if is_possible(pattern, matching_towels):
             count += 1
+    print(count)
+
+
+def part2(lines):
+    towels = tuple([x.strip() for x in lines[0].split(",")])
+    count = 0
+
+    for itr, line in enumerate(lines[2:]):
+        pattern = line.strip()
+        matching_towels = get_matching_towels(pattern, towels)
+        count += count_valid_combinations(pattern, matching_towels)
     print(count)
 
 
@@ -21,26 +34,29 @@ def get_matching_towels(pattern, towels):
     return tuple(res)
 
 
-def count_matching(pattern, towels):
+def is_possible(pattern, towels):
     if len(pattern) <= 0:
-        return 0
+        return True
 
-    if pattern in towels:
-        return len(pattern)
-
-    i = len(pattern)
-    while i > 0:
+    for i in range(1, len(pattern) + 1):
         if pattern[:i] in towels:
-            match_current = i + count_matching(pattern[i:], towels)
-            if match_current == len(pattern):
-                return len(pattern)
+            if is_possible(pattern[i:], towels):
+                return True
 
-            match_current_minus = count_matching(pattern[:i - 1], towels) + count_matching(pattern[i - 1:], towels)
-            if match_current_minus == len(pattern):
-                return len(pattern)
-        i -= 1
-
-    return 0
+    return False
 
 
-PuzzleRunner().run(part1)
+@functools.cache
+def count_valid_combinations(pattern, towels):
+    if len(pattern) == 0:
+        return 1
+
+    count = 0
+    for i in range(1, len(pattern) + 1):
+        if pattern[:i] in towels:
+            count += count_valid_combinations(pattern[i:], towels)
+
+    return count
+
+
+PuzzleRunner().run(part1, part2)
