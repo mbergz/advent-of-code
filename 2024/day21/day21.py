@@ -93,6 +93,92 @@ def part1(lines):
     print(res)
 
 
+# Pair moves like >> and << for faster access next level deep
+# Prefer bottom row instead of ^. < is furthest away from A
+all_dir_keypad = {
+    ("<", "A"): ">>^A",
+    ("v", "A"): "^>A",
+    ("^", "A"): ">A",
+    (">", "A"): "^A",
+    ("A", "A"): "A",
+
+    ("v", "^"): "^A",
+    ("<", "^"): ">^A",
+    (">", "^"): "<^A",
+    ("A", "^"): "<A",
+    ("^", "^"): "A",
+
+    ("A", ">"): "vA",
+    ("v", ">"): ">A",
+    ("^", ">"): "v>A",
+    ("<", ">"): ">>A",
+    (">", ">"): "A",
+
+    ("A", "v"): "<vA",
+    (">", "v"): "<A",
+    ("^", "v"): "vA",
+    ("<", "v"): ">A",
+    ("v", "v"): "A",
+
+    ("A", "<"): "v<<A",
+    (">", "<"): "<<A",
+    ("^", "<"): "v<A",
+    ("v", "<"): "<A",
+    ("<", "<"): "A",
+
+}
+
+path_cache = {}
+
+
+def expand_path_25(curr):
+    path = curr
+    for _ in range(10):
+        path = expand_sub(path)
+
+    res = 0
+    prev = "A"
+    for p in path:
+        res += path_cache[(prev, p)]
+        prev = p
+    return res
+
+
+def populate_cache_15_levels():
+    for e in all_dir_keypad:
+        path = e[1]
+        for i in range(15):
+            if i == 0:
+                path = expand_sub(path, e[0])
+            else:
+                path = expand_sub(path, "A")
+        path_cache[e] = len(path)
+
+
+def expand_sub(curr, prev="A"):
+    res = ""
+    for char in curr:
+        res += (all_dir_keypad[(prev, char)])
+        prev = char
+    return res
+
+
+def part2(lines):
+    res1 = 0
+    populate_cache_15_levels()
+    for code in lines:
+        code_paths = find_paths_for_code(code.strip(), num_keypad_coord, coord_num_keypad)
+
+        length = float("inf")
+        for i, cp in enumerate(code_paths):
+            length = min(length, expand_path_25(cp))
+
+        n_match = re.search(r"\d+", code)
+        code_nbr = int((n_match.group().lstrip("0")))
+        res1 += (length * code_nbr)
+    print(res1)
+
+
 def find_paths_for_code(code, keypad_coord_map, coord_keypad_map):
     paths = [""]
     start = keypad_coord_map["A"]
@@ -131,4 +217,4 @@ def find_paths_for_code(code, keypad_coord_map, coord_keypad_map):
     return paths
 
 
-PuzzleRunner().run(part1)
+PuzzleRunner().run(part1, part2)
