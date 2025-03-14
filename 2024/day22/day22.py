@@ -1,7 +1,5 @@
-import itertools
 import math
-import time
-from collections import deque
+from collections import deque, defaultdict
 
 from runner import PuzzleRunner
 
@@ -18,56 +16,49 @@ def part1(lines):
 def part2(lines):
     """
     Brute force by building up map of all sequences and their respective prices.
-    Then loop all possibilities of sequences (-9,-9,-9,-9) -> (9,9,9,9) and test the max for all.
+    Merge together into one single map with aggregated values for sequences.
+    Then loop all possibilities valid of sequences and test the max for all.
     """
-    start = time.time()
-    seq_prices = []
+    aggregated_price_lookup = defaultdict(int)
     for secret in map(int, lines):
-        seq_prices.append(get_seq_price_dict(secret))
-    print(f"Execution Time1: {time.time() - start:.6f} seconds")
+        seq_price_dict_buyer = get_seq_price_dict(secret)
+        for key, value in seq_price_dict_buyer.items():
+            aggregated_price_lookup[key] += value
 
-    start = time.time()
     total = 0
-    for combo in generate_valid_sequences():
-        res = 0
-        for seq_price in seq_prices:
-            if combo not in seq_price:
-                continue
-            res += seq_price[combo]
-        total = max(total, res)
-    print(f"Execution Time1: {time.time() - start:.6f} seconds")
-
+    for combo in generate_sequences():
+        if combo in aggregated_price_lookup:
+            total = max(total, aggregated_price_lookup[combo])
     print(total)
 
 
-def generate_valid_sequences():
-    return [combo for combo in itertools.product(range(-9, 10), repeat=4) if is_valid(combo)]
+def generate_sequences(prefix=(), last=0):
+    if len(prefix) == 4:
+        return [prefix]
 
+    start = -9 if last >= 0 else -9 - last
+    end = 9 if last <= 0 else 9 - last
 
-def is_valid(combo):
-    for i in range(3):
-        if combo[i] < 0:
-            if combo[i + 1] < 0 and abs(combo[i]) + abs(combo[i + 1]) > 9:
-                return False
-        else:
-            if combo[i + 1] > 0 and combo[i] + combo[i + 1] > 9:
-                return False
-    return True
+    res = []
+    for next_nbr in range(start, end + 1):
+        res.extend(generate_sequences(prefix + (next_nbr,), next_nbr))
+    return res
 
 
 def get_seq_price_dict(secret):
     res = {}
     seq = deque(maxlen=4)
     prev_price = secret % 10
-    secret = calc_secret(secret)  # dont include first elem
+    secret = calc_secret(secret)  # don't include first elem
+
     for i in range(1999):
         price = secret % 10
         seq.append(price - prev_price)
         prev_price = price
         if i >= 3:
-            if tuple(seq) not in res:
-                res[tuple(seq)] = secret % 10
+            res.setdefault(tuple(seq), secret % 10)
         secret = calc_secret(secret)
+
     return res
 
 
