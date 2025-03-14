@@ -1,5 +1,6 @@
 import itertools
 import math
+import time
 from collections import deque
 
 from runner import PuzzleRunner
@@ -19,20 +20,39 @@ def part2(lines):
     Brute force by building up map of all sequences and their respective prices.
     Then loop all possibilities of sequences (-9,-9,-9,-9) -> (9,9,9,9) and test the max for all.
     """
+    start = time.time()
     seq_prices = []
     for secret in map(int, lines):
         seq_prices.append(get_seq_price_dict(secret))
+    print(f"Execution Time1: {time.time() - start:.6f} seconds")
 
+    start = time.time()
     total = 0
-    for combo in itertools.product(range(-9, 10), repeat=4):
+    for combo in generate_valid_sequences():
         res = 0
         for seq_price in seq_prices:
             if combo not in seq_price:
                 continue
             res += seq_price[combo]
         total = max(total, res)
+    print(f"Execution Time1: {time.time() - start:.6f} seconds")
 
     print(total)
+
+
+def generate_valid_sequences():
+    return [combo for combo in itertools.product(range(-9, 10), repeat=4) if is_valid(combo)]
+
+
+def is_valid(combo):
+    for i in range(3):
+        if combo[i] < 0:
+            if combo[i + 1] < 0 and abs(combo[i]) + abs(combo[i + 1]) > 9:
+                return False
+        else:
+            if combo[i + 1] > 0 and combo[i] + combo[i + 1] > 9:
+                return False
+    return True
 
 
 def get_seq_price_dict(secret):
