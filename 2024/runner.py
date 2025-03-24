@@ -18,8 +18,8 @@ class PuzzleRunner:
             self.__time_function(part2, "Part2")
 
     def __time_function(self, func, func_name):
-        start = time.time()
+        start = time.perf_counter()
         print(f"{func_name}: ")
         func(self.lines)
-        time_taken_ms = (time.time() - start) * 1000
-        print(f"Execution time: {time_taken_ms:.4f} ms")
+        time_taken_ms = (time.perf_counter() - start) * 1000
+        print(f"Execution time: {time_taken_ms:.5f} ms")
