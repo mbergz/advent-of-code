@@ -39,7 +39,7 @@ func (comp *IntcodeComp) RunInteractiveMode() {
 		fmt.Println(next)
 	}
 
-	comp.run(inputFn, outputFn, false)
+	comp.RunComputer(inputFn, outputFn, false)
 }
 
 func (comp *IntcodeComp) StepOne(input int) int {
@@ -52,7 +52,7 @@ func (comp *IntcodeComp) StepOne(input int) int {
 		output = next
 	}
 
-	comp.run(inputFn, outputFn, true)
+	comp.RunComputer(inputFn, outputFn, true)
 	return output
 }
 
@@ -68,7 +68,7 @@ func (comp *IntcodeComp) Run(input []int) []int {
 	outputFn := func(next int) {
 		outputArr = append(outputArr, next)
 	}
-	comp.run(inputFn, outputFn, false)
+	comp.RunComputer(inputFn, outputFn, false)
 	return outputArr
 }
 
@@ -79,10 +79,10 @@ func (comp *IntcodeComp) RunChannels(inputChannel chan int, outputChannel chan i
 	outputFn := func(next int) {
 		outputChannel <- next
 	}
-	comp.run(inputFn, outputFn, false)
+	comp.RunComputer(inputFn, outputFn, false)
 }
 
-func (comp *IntcodeComp) run(input func() int, output func(int), stop bool) {
+func (comp *IntcodeComp) RunComputer(input func() int, output func(int), stop bool) {
 main:
 	for comp.pc < comp.programLength {
 		opCode := getOpCode(comp.intArr[comp.pc])
