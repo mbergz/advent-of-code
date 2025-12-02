@@ -1,23 +1,21 @@
 import kotlin.io.path.Path
-import kotlin.io.path.readText
+import kotlin.io.path.readLines
 import kotlin.time.measureTime
 
 abstract class PuzzleRunner {
-    abstract fun part1(input: String)
-    open fun part2(input: String): Unit = Unit
+    abstract fun part1(input: List<String>)
+    open fun part2(input: List<String>): Unit = Unit
 
     fun run() {
         val className = this::class.simpleName ?: error("No class name")
         val input = readInput(className)
 
         println("----- $className -----")
-        println("--- part1 ---")
         val timeTakenPart1 = measureTime { part1(input) }
-        println("-- $timeTakenPart1 --")
-        println("--- part2 ---")
+        println("--- Part 1: $timeTakenPart1 ---")
         val timeTakenPart2 = measureTime { part2(input) }
-        println("-- $timeTakenPart2 --")
+        println("--- Part 2: $timeTakenPart2 ---")
     }
 
-    private fun readInput(name: String) = Path("src/main/resources/$name.txt").readText().trim()
+    private fun readInput(name: String) = Path("src/main/resources/$name.txt").readLines().map { it.trim() }
 }
