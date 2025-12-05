@@ -21,7 +21,27 @@ class Day03 : PuzzleRunner() {
         println(res)
     }
 
+    override fun part2(input: List<String>) {
+        val res = input.map {
+            val res = mutableListOf<Char>()
+            var highestIdx = 0
+            var highest = it[highestIdx]
+            for (i in 12 downTo 1) {
+                for (j in (highestIdx + 1)..(it.length - i)) {
+                    if (it[j] > highest) {
+                        highest = it[j]
+                        highestIdx = j
+                    }
+                }
+                res.add(it[highestIdx])
+                highest = '0'
+            }
+            res.joinToString(separator = "").toLong()
+        }.reduce { acc, nbr -> acc + nbr }
 
+        println(res)
+    }
 }
+
 
 fun main() = Day03().run()
