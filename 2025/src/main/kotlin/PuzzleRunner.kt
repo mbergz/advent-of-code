@@ -17,5 +17,5 @@ abstract class PuzzleRunner {
         println("--- Part 2: $timeTakenPart2 ---")
     }
 
-    private fun readInput(name: String) = Path("src/main/resources/$name.txt").readLines().map { it.trim() }
+    private fun readInput(name: String) = Path("src/main/resources/$name.txt").readLines()
 }
