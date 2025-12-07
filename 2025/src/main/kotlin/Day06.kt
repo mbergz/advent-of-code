@@ -11,15 +11,11 @@ class Day06 : PuzzleRunner() {
         for (i in 0 until nbrs[0].size) {
             var colRes = nbrs[0][i]
             for (j in 1 until nbrs.size) {
-                colRes = when (ops[i]) {
-                    '+' -> colRes + nbrs[j][i]
-                    '*' -> colRes * nbrs[j][i]
-                    else -> throw IllegalStateException()
-                }
+                if (ops[i] == '+') colRes += nbrs[j][i]
+                if (ops[i] == '*') colRes *= nbrs[j][i]
             }
             res += colRes
         }
-
 
         println(res)
     }
