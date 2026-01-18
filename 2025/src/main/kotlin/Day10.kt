@@ -74,6 +74,19 @@ class Day10 : PuzzleRunner() {
             with(ctx) {
                 val solver = KZ3Solver(ctx)
 
+
+                // Build the linear algebra matrix equation Ax=b
+                // If we take first row on the example input we have
+                //                            [ x1 ]
+                //      [  0 0 0 0 1 1  ]     | x2 |        [ 3 ]
+                // A =  |  0 1 0 0 0 1  | x = | x3 |    b = | 5 |
+                //      |  0 0 1 1 1 0  |     | x4 |        | 4 |
+                //      [  1 1 0 1 0 0  ]     | x5 |        [ 7 ]
+                //                            [ x6 ]
+                //
+                // Each column in A represent a button, (3) =  [ 0 0 0 1 ]T
+
+
                 // variables x0,x1,x2..x(n-1)
                 val x = Array(buttons.size) { i ->
                     mkConst("x$i", intSort)
